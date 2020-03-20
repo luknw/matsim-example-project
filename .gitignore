@@ -19,3 +19,7 @@ hs_err_pid*
 
 /.idea/
 *.iml
+
+# MatSim output
+/scenarios/equil/output/
+/test/output/
