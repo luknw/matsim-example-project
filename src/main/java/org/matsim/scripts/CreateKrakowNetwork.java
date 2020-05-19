@@ -6,7 +6,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
-import org.matsim.core.utils.geometry.transformations.IdentityTransformation;
+import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 import org.matsim.core.utils.io.OsmNetworkReader;
 
 /**
@@ -19,7 +19,7 @@ public class CreateKrakowNetwork {
     public static void main(String[] args) {
 
         Network network = ScenarioUtils.createScenario(ConfigUtils.createConfig()).getNetwork();
-        CoordinateTransformation coordinateTransformation = new IdentityTransformation(); // OSM input is always in WGS84 - do we need something different (TODO: try EPSG:32634)?
+        CoordinateTransformation coordinateTransformation = TransformationFactory.getCoordinateTransformation("WGS84", "EPSG:32634");
         OsmNetworkReader osmNetworkReader = new OsmNetworkReader(network, coordinateTransformation);
         osmNetworkReader.setKeepPaths(false);
         osmNetworkReader.parse("./scenarios/krakow/krakow_roads.osm");

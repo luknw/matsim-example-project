@@ -7,6 +7,8 @@ import org.matsim.api.core.v01.population.*;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.CoordUtils;
+import org.matsim.core.utils.geometry.CoordinateTransformation;
+import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,10 +16,10 @@ import java.util.Random;
 
 /**
  * Highly inspired with tutorial.programming.example08DemandGeneration.RunPPopulationGenerator.
- * Something is not consistent with coordinates (or Via can't visualize it properly) most likely EPSG:32634 should be used?
  */
 public class CreateKrakowPopulation {
 
+    private static final CoordinateTransformation coordinateTransformation = TransformationFactory.getCoordinateTransformation("WGS84", "EPSG:32634");
     private static final double minX = 19.6854;
     private static final double maxX = 20.3240;
     private static final double minY = 49.9265;
@@ -35,8 +37,8 @@ public class CreateKrakowPopulation {
 
     private static void fillZoneData() {
         for (int i = 0; i < 10; i++) {
-            zoneGeometries.put("home" + i, CoordUtils.createCoord(getRandomX(), getRandomY()));
-            zoneGeometries.put("work" + i, CoordUtils.createCoord(getRandomX(), getRandomY()));
+            zoneGeometries.put("home" + i, coordinateTransformation.transform(CoordUtils.createCoord(getRandomX(), getRandomY())));
+            zoneGeometries.put("work" + i, coordinateTransformation.transform(CoordUtils.createCoord(getRandomX(), getRandomY())));
         }
     }
 
