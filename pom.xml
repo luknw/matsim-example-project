@@ -112,6 +112,12 @@
 		</dependency>
 		<!--Dependencies from where stated above to here are added as a service; they can be removed if you don't need them-->
 
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>4.6</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
