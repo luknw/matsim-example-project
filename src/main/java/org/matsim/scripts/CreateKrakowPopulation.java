@@ -12,12 +12,14 @@ import java.io.IOException;
 
 /**
  * Inspired with tutorial.programming.example08DemandGeneration.RunPPopulationGenerator.
+ * WARNING: simulation of population of 50,000 sims takes ~15/20 min (5000 about 3min)
  */
 public class CreateKrakowPopulation {
 
-    private static final int populationSize = 50000;
+    private static final int populationSize = 50000; /* visualisation in Vim (free license) is limited to 500 agents */
     private static final String homeSourceFilePath = "./scenarios/krakow/home.csv";
     private static final String workSourceFilePath = "./scenarios/krakow/office.csv";
+    private static final String supermarketSourceFilePath = "./scenarios/krakow/supermarket.csv";
 
     public static void main(String[] args) throws IOException {
         Population population = ScenarioUtils.createScenario(ConfigUtils.createConfig()).getPopulation();
@@ -39,6 +41,7 @@ public class CreateKrakowPopulation {
     private static PlanGenerator getPlanGenerator() throws IOException {
         PlacemarkSource homeSource = new PlacemarkSource(homeSourceFilePath);
         PlacemarkSource workSource = new PlacemarkSource(workSourceFilePath);
-        return new PlanGenerator(homeSource, workSource);
+        PlacemarkSource supermarketSource = new PlacemarkSource(supermarketSourceFilePath);
+        return new PlanGenerator(homeSource, workSource, supermarketSource);
     }
 }
