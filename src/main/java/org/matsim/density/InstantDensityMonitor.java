@@ -12,7 +12,9 @@ import org.matsim.core.api.experimental.events.EventsManager;
 
 /**
  * Counts the number of vehicles in each link and returns current density
+ * WARNING: most likely this class can by replaced with DensityMonitor, but their impact on performance should be evaluated first
  */
+@Deprecated
 public class InstantDensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler {
 
     private final Network network;

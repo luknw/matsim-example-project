@@ -15,7 +15,9 @@ import java.util.ArrayList;
 
 /**
  * Counts the number of vehicles in each link and returns average density (probed once a second) in the monitor's time period
+ * WARNING: most likely this class can by replaced with DensityMonitor, but their impact on performance should be evaluated first
  */
+@Deprecated()
 public class AverageDensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler {
     private final Network network;
     private final int timePeriod;
@@ -59,33 +61,33 @@ public class AverageDensityMonitor implements LinkEnterEventHandler, LinkLeaveEv
         private final int timePeriod;
         private int numberOfCars;
 
-        LinkDensityCounter(int timePeriod){
+        LinkDensityCounter(int timePeriod) {
             this.timePeriod = timePeriod;
             numberOfCars = 0;
             numberOfCarsWithTimestamp = Lists.newArrayListWithCapacity(timePeriod);
-            for(int index = 0; index< timePeriod; index++) {
+            for (int index = 0; index < timePeriod; index++) {
                 numberOfCarsWithTimestamp.set(index, new DensityWithTimestamp());
             }
         }
 
-        LinkDensityCounter increment(int timestamp){
+        LinkDensityCounter increment(int timestamp) {
             numberOfCars++;
             numberOfCarsWithTimestamp.get(timestamp % timePeriod).set(numberOfCars, timestamp);
             return this;
         }
 
-        LinkDensityCounter decrement(int timestamp){
+        LinkDensityCounter decrement(int timestamp) {
             numberOfCars--;
             numberOfCarsWithTimestamp.get(timestamp % timePeriod).set(numberOfCars, timestamp);
             return this;
         }
 
-        double getAverageNumberOfCars(int timestamp){
+        double getAverageNumberOfCars(int timestamp) {
             int sumOfCarSums = 0;
             int lastCarSum = numberOfCars;
-            for(int i = 0; i< timePeriod; i++){
-                int index = (timestamp + timePeriod - i)% timePeriod;
-                if((timestamp - numberOfCarsWithTimestamp.get(index).getTimestamp()) < timePeriod){
+            for (int i = 0; i < timePeriod; i++) {
+                int index = (timestamp + timePeriod - i) % timePeriod;
+                if ((timestamp - numberOfCarsWithTimestamp.get(index).getTimestamp()) < timePeriod) {
                     lastCarSum = numberOfCarsWithTimestamp.get(index).getNumberOfCars();
                 }
                 sumOfCarSums += lastCarSum;
