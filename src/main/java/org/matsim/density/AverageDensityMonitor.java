@@ -15,7 +15,6 @@ import java.util.ArrayList;
 
 /**
  * Counts the number of vehicles in each link and returns average density (probed once a second) in the monitor's time period
- * //TODO implement reset
  */
 public class AverageDensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler {
     private final Network network;
@@ -39,7 +38,7 @@ public class AverageDensityMonitor implements LinkEnterEventHandler, LinkLeaveEv
     public void handleEvent(LinkEnterEvent linkEnterEvent) {
         Id<Link> linkId = linkEnterEvent.getLinkId();
         LinkDensityCounter counter = linkToDensityCounter.putIfAbsent(linkId, new LinkDensityCounter(timePeriod));
-        counter.increment((int) linkEnterEvent.getTime()); //TODO figure out if its in seconds
+        counter.increment((int) linkEnterEvent.getTime()); //TODO figure out if it's in seconds
     }
 
     @Override
@@ -47,6 +46,11 @@ public class AverageDensityMonitor implements LinkEnterEventHandler, LinkLeaveEv
         Id<Link> linkId = linkLeaveEvent.getLinkId();
         LinkDensityCounter counter = linkToDensityCounter.putIfAbsent(linkId, new LinkDensityCounter(timePeriod));
         counter.decrement((int) linkLeaveEvent.getTime());
+    }
+
+    @Override
+    public void reset(int iteration) {
+        linkToDensityCounter.keySet().stream().forEach(linkToDensityCounter::remove);
     }
 
     class LinkDensityCounter {
