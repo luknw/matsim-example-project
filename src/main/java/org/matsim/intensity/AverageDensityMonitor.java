@@ -1,4 +1,4 @@
-package org.matsim.density;
+package org.matsim.intensity;
 
 import com.google.common.collect.Lists;
 import org.matsim.api.core.v01.Id;

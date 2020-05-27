@@ -1,15 +1,17 @@
-package org.matsim.density;
+package org.matsim.intensity;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.IdMap;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
+import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
+import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.vehicles.Vehicle;
 
 import java.util.List;
@@ -17,17 +19,16 @@ import java.util.List;
 /**
  * Keeps time intervals vehicles spend in each link and calculates links' density understood as the number of cars
  * in the link divided by its capacity.
- * //TODO investigate impact on MATSIM's performance
+ * //TODO investigate impact on MATSIM's performance - maybe calculating point/interval intersection with vehicleToTimeInterval should be done smarter - IntervalTree?
  */
-public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler {
+public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler, VehicleEntersTrafficEventHandler {
 
     private final Network network;
     private final IdMap<Link, IdMap<Vehicle, List<TimeInterval>>> linkToVehiclesStatistics; //should we care about thread safety?
 
-    DensityMonitor(Network network, EventsManager eventsManager) {
+    public DensityMonitor(Network network) {
         this.network = network;
         this.linkToVehiclesStatistics = new IdMap<>(Link.class);
-        eventsManager.addHandler(this);
     }
 
     /**
@@ -59,12 +60,19 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
     }
 
     @Override
+    public void handleEvent(VehicleEntersTrafficEvent vehicleEntersTrafficEvent) {
+        Id<Link> linkId = vehicleEntersTrafficEvent.getLinkId();
+        Id<Vehicle> vehicleId = vehicleEntersTrafficEvent.getVehicleId();
+        double time = vehicleEntersTrafficEvent.getTime();
+        addVehicleToLink(vehicleId, linkId, time);
+    }
+
+    @Override
     public void handleEvent(LinkEnterEvent linkEnterEvent) {
         Id<Vehicle> vehicleId = linkEnterEvent.getVehicleId();
         Id<Link> linkId = linkEnterEvent.getLinkId();
         double time = linkEnterEvent.getTime();
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
-        vehicleToTimeInterval.get(vehicleId).add(new TimeInterval(time));
+        addVehicleToLink(vehicleId, linkId, time);
     }
 
     @Override
@@ -72,8 +80,7 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
         Id<Vehicle> vehicleId = linkLeaveEvent.getVehicleId();
         Id<Link> linkId = linkLeaveEvent.getLinkId();
         double time = linkLeaveEvent.getTime();
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
-        Iterables.getLast(vehicleToTimeInterval.get(vehicleId)).setLeaveTime(time);
+        removeVehicleFromLink(vehicleId, linkId, time);
     }
 
     @Override
@@ -81,6 +88,17 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
         linkToVehiclesStatistics.values().stream()
                 .flatMap(map -> map.values().stream())
                 .forEach(List::clear);
+    }
+
+    private void addVehicleToLink(Id<Vehicle> vehicleId, Id<Link> linkId, double time) {
+        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        vehicleToTimeInterval.putIfAbsent(vehicleId, Lists.newArrayList());
+        vehicleToTimeInterval.get(vehicleId).add(new TimeInterval(time));
+    }
+
+    private void removeVehicleFromLink(Id<Vehicle> vehicleId, Id<Link> linkId, double time) {
+        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        Iterables.getLast(vehicleToTimeInterval.get(vehicleId)).setLeaveTime(time);
     }
 
     private IdMap<Vehicle, List<TimeInterval>> getOrPutEmpty(Id<Link> linkId) {

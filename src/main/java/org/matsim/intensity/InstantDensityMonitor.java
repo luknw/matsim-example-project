@@ -1,4 +1,4 @@
-package org.matsim.density;
+package org.matsim.intensity;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.IdMap;
