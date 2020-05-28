@@ -1,6 +1,5 @@
 package org.matsim.project;
 
-import org.matsim.analysis.VolumesAnalyzer;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -10,6 +9,7 @@ import org.matsim.core.utils.io.IOUtils;
 import org.matsim.intensity.DelayMonitor;
 import org.matsim.intensity.DensityMonitor;
 import org.matsim.intensity.TestDensityReporter;
+import org.matsim.intensity.VolumesMonitor;
 
 import java.net.URL;
 
@@ -33,7 +33,7 @@ public class RunMatsimFromExamplesUtils {
         Controler controler = new Controler(scenario);
         TestDensityReporter testDensityReporter =
                 new TestDensityReporter(new DensityMonitor(scenario.getNetwork()),
-                        new VolumesAnalyzer(3600, 86399, scenario.getNetwork()),
+                        new VolumesMonitor(),
                         new DelayMonitor(),
                         scenario.getNetwork().getLinks().values().iterator().next());
         controler.addControlerListener(testDensityReporter);

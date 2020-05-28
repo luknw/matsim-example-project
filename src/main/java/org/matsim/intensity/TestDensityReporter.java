@@ -1,7 +1,6 @@
 package org.matsim.intensity;
 
 import org.apache.log4j.Logger;
-import org.matsim.analysis.VolumesAnalyzer;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 import org.matsim.api.core.v01.network.Link;
@@ -17,13 +16,13 @@ public class TestDensityReporter implements StartupListener, LinkEnterEventHandl
     private static final String message = "Statistics for a link %d at %f: density = %f, volume = %d, delay = %f ";
 
     private final DensityMonitor densityMonitor;
-    private final VolumesAnalyzer volumesAnalyzer;
+    private final VolumesMonitor volumesMonitor;
     private final DelayMonitor delayMonitor;
     private final Link monitoredLink;
 
-    public TestDensityReporter(DensityMonitor densityMonitor, VolumesAnalyzer volumesAnalyzer, DelayMonitor delayMonitor, Link link) {
+    public TestDensityReporter(DensityMonitor densityMonitor, VolumesMonitor volumesMonitor, DelayMonitor delayMonitor, Link link) {
         this.densityMonitor = densityMonitor;
-        this.volumesAnalyzer = volumesAnalyzer;
+        this.volumesMonitor = volumesMonitor;
         this.delayMonitor = delayMonitor;
         this.monitoredLink = link;
     }
@@ -31,7 +30,7 @@ public class TestDensityReporter implements StartupListener, LinkEnterEventHandl
     @Override
     public void notifyStartup(StartupEvent startupEvent) {
         startupEvent.getServices().getEvents().addHandler(densityMonitor);
-        startupEvent.getServices().getEvents().addHandler(volumesAnalyzer);
+        startupEvent.getServices().getEvents().addHandler(volumesMonitor);
         startupEvent.getServices().getEvents().addHandler(this);
     }
 
@@ -39,9 +38,9 @@ public class TestDensityReporter implements StartupListener, LinkEnterEventHandl
     public void handleEvent(LinkEnterEvent linkEnterEvent) {
         double time = linkEnterEvent.getTime() - 1.0; // for the density not to fluctuate
         double density = densityMonitor.getDensityForLink(monitoredLink.getId(), time);
-        int[] volumes = volumesAnalyzer.getVolumesForLink(monitoredLink.getId());
+        int volume = volumesMonitor.getVolume(monitoredLink.getId(), time);
         double delay = delayMonitor.getDelay(monitoredLink, time);
 
-        LOGGER.info(String.format(message, monitoredLink.getId().index(), time, density, volumes[(int) Math.floor(time / 3600)], delay));
+        LOGGER.info(String.format(message, monitoredLink.getId().index(), time, density, volume, delay));
     }
 }
