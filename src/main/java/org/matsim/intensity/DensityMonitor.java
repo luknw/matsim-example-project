@@ -3,7 +3,6 @@ package org.matsim.intensity;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.IdMap;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
@@ -14,6 +13,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.Vehicle;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -24,18 +24,19 @@ import java.util.List;
 public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler, VehicleEntersTrafficEventHandler {
 
     private final Network network;
-    private final IdMap<Link, IdMap<Vehicle, List<TimeInterval>>> linkToVehiclesStatistics; //should we care about thread safety?
+    //should we care about thread safety?
+    private final HashMap<Id<Link>, HashMap<Id<Vehicle>, List<TimeInterval>>> linkToVehiclesStatistics; // I think there is no need to use TreeSet
 
     public DensityMonitor(Network network) {
         this.network = network;
-        this.linkToVehiclesStatistics = new IdMap<>(Link.class);
+        this.linkToVehiclesStatistics = new HashMap<>(); //what about predefined size??
     }
 
     /**
      * @return vehicles' density in a link at the given point in time
      */
     public double getDensityForLink(final Id<Link> linkId, double time) {
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        HashMap<Id<Vehicle>, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
         double capacity = network.getLinks().get(linkId).getCapacity();
         int numberOfCars = vehicleToTimeInterval.values().stream()
                 .flatMap(List::stream)
@@ -49,7 +50,7 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
      * @return vehicles' density in a link in the given period
      */
     public double getAverageDensityForLinkInInterval(final Id<Link> linkId, double startTime, double endTime) {
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        HashMap<Id<Vehicle>, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
         double capacity = network.getLinks().get(linkId).getCapacity();
         double commonIntervalsSum = vehicleToTimeInterval.values().stream()
                 .flatMap(List::stream)
@@ -91,19 +92,19 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
     }
 
     private void addVehicleToLink(Id<Vehicle> vehicleId, Id<Link> linkId, double time) {
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        HashMap<Id<Vehicle>, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
         vehicleToTimeInterval.putIfAbsent(vehicleId, Lists.newArrayList());
         vehicleToTimeInterval.get(vehicleId).add(new TimeInterval(time));
     }
 
     private void removeVehicleFromLink(Id<Vehicle> vehicleId, Id<Link> linkId, double time) {
-        IdMap<Vehicle, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
+        HashMap<Id<Vehicle>, List<TimeInterval>> vehicleToTimeInterval = getOrPutEmpty(linkId);
         Iterables.getLast(vehicleToTimeInterval.get(vehicleId)).setLeaveTime(time);
     }
 
-    private IdMap<Vehicle, List<TimeInterval>> getOrPutEmpty(Id<Link> linkId) {
-        IdMap<Vehicle, List<TimeInterval>> emptyMap = new IdMap<>(Vehicle.class);
-        IdMap<Vehicle, List<TimeInterval>> result = linkToVehiclesStatistics.putIfAbsent(linkId, emptyMap);
+    private HashMap<Id<Vehicle>, List<TimeInterval>> getOrPutEmpty(Id<Link> linkId) {
+        HashMap<Id<Vehicle>, List<TimeInterval>> emptyMap = new HashMap<>();
+        HashMap<Id<Vehicle>, List<TimeInterval>> result = linkToVehiclesStatistics.putIfAbsent(linkId, emptyMap);
         return result != null ? result : emptyMap;
     }
 
