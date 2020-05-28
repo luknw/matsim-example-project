@@ -1,6 +1,7 @@
 package org.matsim.project;
 
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
@@ -8,10 +9,11 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.intensity.DelayMonitor;
 import org.matsim.intensity.DensityMonitor;
-import org.matsim.intensity.TestDensityReporter;
+import org.matsim.intensity.TestTrafficIntensityReporter;
 import org.matsim.intensity.VolumesMonitor;
 
 import java.net.URL;
+import java.util.Collection;
 
 public class RunMatsimFromExamplesUtils {
 
@@ -31,12 +33,15 @@ public class RunMatsimFromExamplesUtils {
         // ---
 
         Controler controler = new Controler(scenario);
-        TestDensityReporter testDensityReporter =
-                new TestDensityReporter(new DensityMonitor(scenario.getNetwork()),
-                        new VolumesMonitor(),
-                        new DelayMonitor(),
-                        scenario.getNetwork().getLinks().values().iterator().next());
-        controler.addControlerListener(testDensityReporter);
+        DensityMonitor densityMonitor = new DensityMonitor(scenario.getNetwork());
+        VolumesMonitor volumesMonitor = new VolumesMonitor();
+        DelayMonitor delayMonitor = new DelayMonitor();
+
+        TestTrafficIntensityReporter testTrafficIntensityReporter =
+                new TestTrafficIntensityReporter(densityMonitor, volumesMonitor, delayMonitor,
+                        (Collection<Link>) scenario.getNetwork().getLinks().values());
+        controler.addControlerListener(testTrafficIntensityReporter);
+
 
         // ---
 
