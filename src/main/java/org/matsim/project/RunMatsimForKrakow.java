@@ -26,7 +26,6 @@ public class RunMatsimForKrakow {
         VolumesMonitor volumesMonitor = new VolumesMonitor();
         DelayMonitor delayMonitor = new DelayMonitor();
 
-        //TODO test with 50,000+ vehicles (with 500 is fine)
        TestTrafficIntensityReporter testTrafficIntensityReporter =
                new TestTrafficIntensityReporter(densityMonitor, volumesMonitor, delayMonitor,
                        (Collection<Link>) scenario.getNetwork().getLinks().values());
