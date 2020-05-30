@@ -27,6 +27,12 @@
         <param name="endTime" value="00:00:00" />
 
         <param name = "snapshotperiod"	value = "00:00:00"/> <!-- 00:00:00 means NO snapshot writing -->
+
+        <!--the signals don't use lanes currently-->
+        <param name="useLanes" value="false" />
+
+        <!--fast flow must be disabled when using signals-->
+        <param name="usingFastCapacityUpdate" value="false" />
     </module>
 
     <module name="planCalcScore">
@@ -63,6 +69,19 @@
 
         <param name="ModuleProbability_2" value="0.1" />
         <param name="Module_2" value="ReRoute" />
+    </module>
+
+    <module name="signalsystems" >
+        <!-- Possible values: WARN, EXCEPTION -->
+        <param name="actionOnIntergreenViolation" value="WARN" />
+        <param name="ambertimes" value="null" />
+        <param name="intergreentimes" value="null" />
+        <param name="signalcontrol" value="signal_control.xml" />
+        <param name="signalgroups" value="signal_groups.xml" />
+        <param name="signalsystems" value="signal_systems.xml" />
+        <param name="useAmbertimes" value="false" />
+        <param name="useIntergreentimes" value="false" />
+        <param name="useSignalsystems" value="true" />
     </module>
 
 </config>
