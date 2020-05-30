@@ -7,6 +7,8 @@ import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.Population;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -18,6 +20,16 @@ public class PlanGenerator {
     private final PlacemarkSource supermarketSource;
     private final Random generator;
 
+    int i = 0;
+    List<Coord> homes = Arrays.asList(new Coord(423321.8999744049, 5545419.05883264),
+            new Coord(423182.97427784745, 5545407.062539328),
+            new Coord(423127.27545815904, 5545257.324252227),
+            new Coord(423250.9990289205, 5545271.405533751));
+    List<Coord> works = Arrays.asList(new Coord(423127.27545815904, 5545257.324252227),
+            new Coord(423250.9990289205, 5545271.405533751),
+            new Coord(423297.178059199, 5545368.147721792),
+            new Coord(423208.189120309, 5545409.45837616));
+
     PlanGenerator(PlacemarkSource homeSource, PlacemarkSource workSource, PlacemarkSource supermarketSource) {
         this.homeSource = homeSource;
         this.workSource = workSource;
@@ -26,25 +38,27 @@ public class PlanGenerator {
     }
 
     public Plan generate(Population population) {
+        int i = this.i++ % homes.size();
         Plan plan = population.getFactory().createPlan();
-        Coord homeLocation = homeSource.getRandomPlacemark().getCoordInEpsg();
-        Coord workLocation = workSource.getRandomPlacemark().getCoordInEpsg();
+
+        Coord homeLocation = homes.get(i); // homeSource.getRandomPlacemark().getCoordInEpsg();
+        Coord workLocation = works.get(i); // workSource.getRandomPlacemark().getCoordInEpsg();
         Coord supermarketLocation = supermarketSource.getRandomPlacemark().getCoordInEpsg();
 
-        int homeLeavingTime = (int) Math.round(generator.nextGaussian() * 60 * 60 + 7.5 * 60 * 60);
+        int homeLeavingTime = (int) Math.round(7.5 * 60 * 60);
         plan.addActivity(createHome(population, homeLocation, homeLeavingTime));
         plan.addLeg(createDriveLeg(population));
 
-        int workLeavingTime = (int) Math.round(generator.nextGaussian() * 20 * 60 + homeLeavingTime + 9 * 60 * 60);
+        int workLeavingTime = (int) Math.round(homeLeavingTime + 9 * 60 * 60);
         plan.addActivity(createWork(population, workLocation, workLeavingTime));
         plan.addLeg(createDriveLeg(population));
 
-        /* ~30% of the population goes for groceries after work */
-        if(generator.nextInt(3) % 3 == 0) {
-            int supermarketLeavingTime = (int) Math.round(generator.nextGaussian() * 10 * 60 + workLeavingTime + 60 * 60);
-            plan.addActivity(createShop(population, supermarketLocation, supermarketLeavingTime));
-            plan.addLeg(createDriveLeg(population));
-        }
+//        /* ~30% of the population goes for groceries after work */
+//        if(generator.nextInt(3) % 3 == 0) {
+//            int supermarketLeavingTime = (int) Math.round(workLeavingTime + 60 * 60);
+//            plan.addActivity(createShop(population, supermarketLocation, supermarketLeavingTime));
+//            plan.addLeg(createDriveLeg(population));
+//        }
 
         /* it's agent's last activity so endTime is set to MAX_VALUE */
         plan.addActivity(createHome(population, homeLocation, Integer.MAX_VALUE));
