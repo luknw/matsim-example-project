@@ -1,5 +1,6 @@
 package org.matsim.scripts;
 
+import com.opencsv.CSVWriter;
 import de.topobyte.osm4j.core.access.DefaultOsmHandler;
 import de.topobyte.osm4j.core.access.OsmInputException;
 import de.topobyte.osm4j.core.model.iface.OsmNode;
@@ -30,7 +31,9 @@ import org.matsim.core.network.algorithms.intersectionSimplifier.containers.Clus
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
+import org.matsim.core.utils.io.IOUtils;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,7 +58,7 @@ public class CreateKrakowSignals {
             systems.addSignalSystemData(sysData);
 
             sys.getPoints().forEach(signal -> {
-                SignalData signalData = systems.getFactory().createSignalData(Id.create(signal.getId(), Signal.class));
+                SignalData signalData = systems.getFactory().createSignalData(Id.create(signal.getNode().getId(), Signal.class));
                 sysData.addSignalData(signalData);
                 signal.getNode().getInLinks().values().forEach(in -> signalData.setLinkId(in.getId()));
             });
@@ -71,10 +74,25 @@ public class CreateKrakowSignals {
 
     public static void main(String[] args) throws IOException, OsmInputException {
         List<Cluster> signalSystems = readSignalSystems();
+
+        saveSignalSystemsCsv(signalSystems);
+
         Scenario dummyScenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
         SignalsData signalsData = createSignalsData(dummyScenario);
         populateSignalsData(signalsData, signalSystems);
+
         saveSignalsData(dummyScenario);
+    }
+
+    private static void saveSignalSystemsCsv(List<Cluster> signalSystems) throws IOException {
+        try (BufferedWriter out = IOUtils.getBufferedWriter("./scenarios/krakow/krakow_signal_systems.csv");
+             CSVWriter csv = new CSVWriter(out)) {
+            csv.writeNext(new String[]{"signalSystemId", "x", "y"});
+            signalSystems.forEach(s -> {
+                Coord centre = s.getCenterOfGravity();
+                csv.writeNext(new String[]{s.getId().toString(), String.valueOf(centre.getX()), String.valueOf(centre.getY())});
+            });
+        }
     }
 
     private static void saveSignalsData(Scenario scenario) {
