@@ -75,7 +75,7 @@ public class CreateKrakowSignals {
     public static void main(String[] args) throws IOException, OsmInputException {
         List<Cluster> signalSystems = readSignalSystems();
 
-        saveSignalSystemsCsv(signalSystems);
+        saveSignalCsvs(signalSystems);
 
         Scenario dummyScenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
         SignalsData signalsData = createSignalsData(dummyScenario);
@@ -84,14 +84,30 @@ public class CreateKrakowSignals {
         saveSignalsData(dummyScenario);
     }
 
-    private static void saveSignalSystemsCsv(List<Cluster> signalSystems) throws IOException {
+    private static void saveSignalCsvs(List<Cluster> signalSystems) throws IOException {
         try (BufferedWriter out = IOUtils.getBufferedWriter("./scenarios/krakow/krakow_signal_systems.csv");
              CSVWriter csv = new CSVWriter(out)) {
             csv.writeNext(new String[]{"signalSystemId", "x", "y"});
             signalSystems.forEach(s -> {
                 Coord centre = s.getCenterOfGravity();
-                csv.writeNext(new String[]{s.getId().toString(), String.valueOf(centre.getX()), String.valueOf(centre.getY())});
+                csv.writeNext(new String[]{
+                        s.getId().toString(),
+                        String.valueOf(centre.getX()),
+                        String.valueOf(centre.getY())
+                });
             });
+        }
+        try (BufferedWriter out = IOUtils.getBufferedWriter("./scenarios/krakow/krakow_signals.csv");
+             CSVWriter csv = new CSVWriter(out)) {
+            csv.writeNext(new String[]{"signalId", "signalSystemId", "x", "y"});
+            signalSystems.stream()
+                    .flatMap(sys -> sys.getPoints().stream())
+                    .forEach(signal -> csv.writeNext(new String[]{
+                            signal.getNode().getId().toString(),
+                            signal.getCluster().getId().toString(),
+                            String.valueOf(signal.getCoord().getX()),
+                            String.valueOf(signal.getCoord().getY()),
+                    }));
         }
     }
 
