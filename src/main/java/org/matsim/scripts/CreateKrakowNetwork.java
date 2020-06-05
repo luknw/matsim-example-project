@@ -6,6 +6,7 @@ import org.matsim.api.core.v01.network.NetworkWriter;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
+import org.matsim.networkReader.OsmSignalsReader;
 import org.matsim.networkReader.SupersonicOsmNetworkReader;
 
 /**
@@ -25,7 +26,7 @@ public class CreateKrakowNetwork {
 
     public static void main(String[] args) {
 
-        SupersonicOsmNetworkReader osmNetworkReader = new SupersonicOsmNetworkReader.Builder()
+        OsmSignalsReader osmNetworkReader = new OsmSignalsReader.Builder()
                 .setCoordinateTransformation(TRANSFORM)
                 .setIncludeLinkAtCoordWithHierarchy((coord, hierarchy) ->
                         MIN_BOUND.getX() <= coord.getX() && coord.getX() <= MAX_BOUND.getX()

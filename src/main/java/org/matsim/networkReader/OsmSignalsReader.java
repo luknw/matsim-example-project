@@ -14,31 +14,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 public class OsmSignalsReader extends SupersonicOsmNetworkReader {
 
-    private final OsmSignalsParser signalsParser;
-
     OsmSignalsReader(OsmSignalsParser parser,
-                     Predicate<Long> preserveNodeWithId,
                      BiPredicate<Coord, Integer> includeLinkAtCoordWithHierarchy,
                      AfterLinkCreated afterLinkCreated) {
-
         super(parser,
-                id -> keepCrossing(id, parser),
+                id -> parser.getSignalizedNodes().containsKey(id),
                 includeLinkAtCoordWithHierarchy,
-                (link, tags, direction) -> doAfterLinkCreated(link, tags, direction, afterLinkCreated));
-        signalsParser = parser;
-
-        throw new RuntimeException("The signals reader is not yet implemented. Please don't use it yet.");
+                (link, tags, direction) -> addSignalTags(link, tags, direction, afterLinkCreated));
     }
 
-    private static boolean keepCrossing(long id, OsmSignalsParser parser) {
-        return parser.getSignalizedNodes().containsKey(id);
+    private OsmSignalsParser getSignalsParser() {
+        return (OsmSignalsParser) parser;
     }
 
-    private static void doAfterLinkCreated(Link link, Map<String, String> tags, Direction direction, AfterLinkCreated outfacingCallback) {
+    private static void addSignalTags(Link link, Map<String, String> tags, Direction direction, AfterLinkCreated outfacingCallback) {
 
         String turnLanes = tags.get("turn:lanes");
         // and the other tags
@@ -54,7 +46,7 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
     }
 
     public Map<Long, String> getSignalizedNodes() {
-        throw new RuntimeException(" not yet implemented");
+        return getSignalsParser().getSignalizedNodes();
     }
 
     @Override
@@ -69,7 +61,7 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
 
             Coord coord = node.getCoord();
             Collection<Node> out = new ArrayList<>();
-            searchable.getNodeQuadTree().getRectangle(coord.getX() - 30, coord.getY() - 30, coord.getX() + 30, coord.getY() + 30, out);
+//            searchable.getNodeQuadTree().getRectangle(coord.getX() - 30, coord.getY() - 30, coord.getX() + 30, coord.getY() + 30, out);
 
             // create a new intersection node, which is going to be the single intersection
             // memorize all nodes which are part of that intersection, so they can be removed later
@@ -81,7 +73,7 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
         // 3. merge intersection
 
         // 4. Fill toLinks of lanes
-        for (Set<ProcessedRelation> value : signalsParser.getNodeRestrictions().values()) {
+        for (Set<ProcessedRelation> value : getSignalsParser().getNodeRestrictions().values()) {
             for (ProcessedRelation processedRelation : value) {
                 // do something relations related
                 // find lanes stack in the yet to implement lanesStack property
@@ -101,7 +93,7 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
 
             long node = way.getNodeIds().get(i);
 
-            if (signalsParser.getSignalizedNodes().containsKey(node)) {
+            if (getSignalsParser().getSignalizedNodes().containsKey(node)) {
                 // wenn nicht am ende, dann evtl. verschieben
             }
 
@@ -118,7 +110,7 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
             OsmSignalsParser parser = new OsmSignalsParser(coordinateTransformation,
                     linkProperties, includeLinkAtCoordWithHierarchy, Executors.newWorkStealingPool());
 
-            return new OsmSignalsReader(parser, preserveNodeWithId, includeLinkAtCoordWithHierarchy, afterLinkCreated);
+            return new OsmSignalsReader(parser, includeLinkAtCoordWithHierarchy, afterLinkCreated);
         }
     }
 }
