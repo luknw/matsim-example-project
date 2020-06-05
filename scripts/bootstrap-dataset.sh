@@ -17,9 +17,6 @@ function osmosis_extract_krakow() {
         "$@"
 }
 
-# extract roads
-osmosis_extract_krakow --used-node --write-xml file="krakow_roads.osm"
-
 # extract traffic signals
 osmosis_extract_krakow \
     --node-key-value keyValueList="highway.traffic_signals" \

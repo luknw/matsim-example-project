@@ -1275,6 +1275,11 @@
             <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
         </signalSystemController>
     </signalSystem>
+    <signalSystem refId="558">
+        <signalSystemController>
+            <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
+        </signalSystemController>
+    </signalSystem>
     <signalSystem refId="56">
         <signalSystemController>
             <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
