@@ -106,7 +106,7 @@ class OsmSignalsParser extends OsmNetworkParser {
             if (tags.containsKey(OsmTags.HIGHWAY)) {
                 String highwayTag = tags.get(OsmTags.HIGHWAY);
 
-                if (highwayTag.equals(OsmTags.TRAFFIC_SINGALS) || highwayTag.equals(OsmTags.CROSSING)) {
+                if (highwayTag.equals(OsmTags.TRAFFIC_SIGNALS)) {
                     signalizedNodes.put(osmNode.getId(), highwayTag);
                 }
             }

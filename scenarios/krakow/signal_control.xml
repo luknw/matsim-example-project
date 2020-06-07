@@ -1285,21 +1285,6 @@
             <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
         </signalSystemController>
     </signalSystem>
-    <signalSystem refId="560">
-        <signalSystemController>
-            <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
-        </signalSystemController>
-    </signalSystem>
-    <signalSystem refId="562">
-        <signalSystemController>
-            <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
-        </signalSystemController>
-    </signalSystem>
-    <signalSystem refId="564">
-        <signalSystemController>
-            <controllerIdentifier>LaemmerSignalController</controllerIdentifier>
-        </signalSystemController>
-    </signalSystem>
     <signalSystem refId="58">
         <signalSystemController>
             <controllerIdentifier>LaemmerSignalController</controllerIdentifier>

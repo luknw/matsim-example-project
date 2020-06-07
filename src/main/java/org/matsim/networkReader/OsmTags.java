@@ -31,6 +31,9 @@ public class OsmTags {
     public static final String LANES = "lanes";
     public static final String LANES_FORWARD = "lanes:forward";
     public static final String LANES_BACKWARD = "lanes:backward";
+    public static final String TURN_LANES = "turn:lanes";
+    public static final String TURN_LANES_FORWARD = "turn:lanes:forward";
+    public static final String TURN_LANES_BACKWARD = "turn:lanes:backward";
 
     public static final String SURFACE = "surface";
     public static final String SMOOTHNESS = "smoothness";
@@ -38,7 +41,7 @@ public class OsmTags {
     public final static String ONEWAYBICYCLE = "oneway:bicycle";
 
     public static final String MPH = "mph";
-    public static final String TRAFFIC_SINGALS = "traffic_signals";
+    public static final String TRAFFIC_SIGNALS = "traffic_signals";
     public static final String CROSSING = "crossing";
     public static final String TYPE = "type";
     public static final String RESTRICTION = "restriction";

@@ -9,6 +9,7 @@
 
     <module name="network">
         <param name="inputNetworkFile" value="network.xml" />
+        <param name="laneDefinitionsFile" value="lanes.xml" />
     </module>
 
     <module name="plans">

@@ -6,6 +6,8 @@ import org.matsim.api.core.v01.network.NetworkWriter;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
+import org.matsim.lanes.Lanes;
+import org.matsim.lanes.LanesWriter;
 import org.matsim.networkReader.OsmSignalsReader;
 import org.matsim.networkReader.SupersonicOsmNetworkReader;
 
@@ -39,5 +41,7 @@ public class CreateKrakowNetwork {
         NetworkWriter networkWriter = new NetworkWriter(network);
         networkWriter.write("./scenarios/krakow/network.xml");
 
+        Lanes lanes = osmNetworkReader.getLanes(network);
+        new LanesWriter(lanes).write("./scenarios/krakow/lanes.xml");
     }
 }
