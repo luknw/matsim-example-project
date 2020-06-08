@@ -1,9 +1,11 @@
 package org.matsim.intensity;
 
+import com.google.inject.Inject;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.core.api.experimental.events.EventsManager;
 
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -11,11 +13,13 @@ import java.util.TreeMap;
 /**
  * Keeps the numbers of vehicles leaving each link in a point in time
  */
-public class VolumesMonitor implements LinkLeaveEventHandler {
+public class VolumesMonitor implements LinkLeaveEventHandler, IntensityMonitor {
     private final HashMap<Id<Link>, TreeMap<Double, Integer>> linkToVolumesAtTime;
 
-    public VolumesMonitor() {
+    @Inject
+    public VolumesMonitor(EventsManager manager) {
         linkToVolumesAtTime = new HashMap<>(Id.getNumberOfIds(Link.class)); // won't it cause memory issues?
+        manager.addHandler(this);
     }
 
     @Override
@@ -50,5 +54,20 @@ public class VolumesMonitor implements LinkLeaveEventHandler {
         TreeMap<Double, Integer> emptyMap = new TreeMap<>();
         TreeMap<Double, Integer> result = linkToVolumesAtTime.putIfAbsent(linkId, emptyMap);
         return result != null ? result : emptyMap;
+    }
+
+    @Override
+    public double getIntensityForLink(Id<Link> link, double time) {
+        return getVolume(link, time);
+    }
+
+    @Override
+    public double getAverageIntensityForLinkInInterval(Id<Link> link, double startTime, double endTime) {
+        return getVolume(link, startTime, endTime);
+    }
+
+    @Override
+    public double getIntensityThreshold() {
+        return 5;
     }
 }

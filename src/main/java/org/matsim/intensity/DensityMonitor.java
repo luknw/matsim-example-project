@@ -2,7 +2,9 @@ package org.matsim.intensity;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
@@ -11,6 +13,7 @@ import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.vehicles.Vehicle;
 
 import java.util.HashMap;
@@ -21,15 +24,17 @@ import java.util.List;
  * in the link divided by its capacity.
  * //TODO investigate impact on MATSIM's performance - maybe calculating point/interval intersection with vehicleToTimeInterval should be done smarter - IntervalTree?
  */
-public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler, VehicleEntersTrafficEventHandler {
+public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHandler, VehicleEntersTrafficEventHandler, IntensityMonitor {
 
     private final Network network;
     //should we care about thread safety?
     private final HashMap<Id<Link>, HashMap<Id<Vehicle>, List<TimeInterval>>> linkToVehiclesStatistics; // I think there is no need to use TreeSet
 
-    public DensityMonitor(Network network) {
-        this.network = network;
+    @Inject
+    public DensityMonitor(Scenario scenario, EventsManager manager) {
+        this.network = scenario.getNetwork();
         this.linkToVehiclesStatistics = new HashMap<>(); //what about predefined size??
+        manager.addHandler(this);
     }
 
     /**
@@ -106,6 +111,21 @@ public class DensityMonitor implements LinkEnterEventHandler, LinkLeaveEventHand
         HashMap<Id<Vehicle>, List<TimeInterval>> emptyMap = new HashMap<>();
         HashMap<Id<Vehicle>, List<TimeInterval>> result = linkToVehiclesStatistics.putIfAbsent(linkId, emptyMap);
         return result != null ? result : emptyMap;
+    }
+
+    @Override
+    public double getIntensityForLink(Id<Link> link, double time) {
+        return getDensityForLink(link, time);
+    }
+
+    @Override
+    public double getAverageIntensityForLinkInInterval(Id<Link> link, double startTime, double endTime) {
+        return getAverageDensityForLinkInInterval(link, startTime, endTime);
+    }
+
+    @Override
+    public double getIntensityThreshold() {
+        return 0.1;
     }
 
     private static class TimeInterval {
