@@ -1,4 +1,4 @@
-package org.matsim.intensity;
+package pl.edu.agh.matsim.intensity;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;

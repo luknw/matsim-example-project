@@ -36,9 +36,9 @@ public class RunMatsimForKrakow {
     }
 
     private static void attachMetrics() {
-        DensityMonitor densityMonitor = new DensityMonitor(scenario.getNetwork());
-        VolumesMonitor volumesMonitor = new VolumesMonitor();
-        DelayMonitor delayMonitor = new DelayMonitor();
+        DensityMonitor densityMonitor = new DensityMonitor(scenario, controler.getEvents());
+        VolumesMonitor volumesMonitor = new VolumesMonitor(controler.getEvents());
+        DelayMonitor delayMonitor = new DelayMonitor(scenario);
 
         TestTrafficIntensityReporter testTrafficIntensityReporter =
                 new TestTrafficIntensityReporter(densityMonitor, volumesMonitor, delayMonitor,

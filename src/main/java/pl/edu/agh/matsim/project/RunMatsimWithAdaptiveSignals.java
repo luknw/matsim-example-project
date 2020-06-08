@@ -1,4 +1,4 @@
-package org.matsim.project;
+package pl.edu.agh.matsim.project;
 
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.contrib.signals.SignalSystemsConfigGroup;
@@ -10,8 +10,8 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.scenario.ScenarioUtils;
-import org.matsim.signal.IntensityAdaptiveSignalController;
-import org.matsim.signal.SignalsModule;
+import pl.edu.agh.matsim.signal.IntensityAdaptiveSignalController;
+import pl.edu.agh.matsim.signal.SignalsModule;
 
 /**
  * Runs Krakow scenario with adaptive signals control.

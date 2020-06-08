@@ -1,11 +1,11 @@
-package org.matsim.signal;
+package pl.edu.agh.matsim.signal;
 
 
 import com.google.inject.Singleton;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.intensity.DelayMonitor;
 import org.matsim.intensity.DensityMonitor;
-import org.matsim.intensity.IntensityMonitor;
+import pl.edu.agh.matsim.intensity.IntensityMonitor;
 
 /**
  * Define here which IntensityMonitor should be used in IntensityAdaptiveSignalController

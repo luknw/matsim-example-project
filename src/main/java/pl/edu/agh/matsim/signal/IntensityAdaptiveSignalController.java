@@ -1,4 +1,4 @@
-package org.matsim.signal;
+package pl.edu.agh.matsim.signal;
 
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -16,7 +16,7 @@ import org.matsim.contrib.signals.data.signalgroups.v20.SignalGroupSettingsData;
 import org.matsim.contrib.signals.data.signalgroups.v20.SignalPlanData;
 import org.matsim.contrib.signals.data.signalgroups.v20.SignalSystemControllerData;
 import org.matsim.contrib.signals.model.*;
-import org.matsim.intensity.IntensityMonitor;
+import pl.edu.agh.matsim.intensity.IntensityMonitor;
 
 import java.lang.reflect.Field;
 import java.util.Collection;

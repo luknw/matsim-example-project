@@ -1,4 +1,4 @@
-package org.matsim.scripts;
+package pl.edu.agh.matsim.scripts;
 
 import com.opencsv.CSVWriter;
 import de.topobyte.osm4j.core.access.DefaultOsmHandler;
@@ -32,7 +32,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 import org.matsim.core.utils.io.IOUtils;
-import org.matsim.signal.IntensityAdaptiveSignalController;
+import pl.edu.agh.matsim.signal.IntensityAdaptiveSignalController;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -42,7 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CreateKrakowSignals {
+public class CreateAdaptiveKrakowSignals {
 
     /**
      * Radius 150 is enough to cluster big junctions like Mogilskie
