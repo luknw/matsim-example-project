@@ -9,6 +9,7 @@
 
     <module name="network">
         <param name="inputNetworkFile" value="network.xml" />
+        <param name="laneDefinitionsFile" value="lanes.xml" />
     </module>
 
     <module name="plans">
@@ -29,7 +30,7 @@
         <param name = "snapshotperiod"	value = "00:00:00"/> <!-- 00:00:00 means NO snapshot writing -->
 
         <!--the signals don't use lanes currently-->
-        <param name="useLanes" value="false" />
+        <param name="useLanes" value="true" />
 
         <!--fast flow must be disabled when using signals-->
         <param name="usingFastCapacityUpdate" value="false" />
