@@ -373,6 +373,9 @@ public final class QLinkLanesImpl extends AbstractQLink {
 
 	private QLaneI chooseNextLane(QLaneI queue, Id<Link> toLinkId) {
 		List<QLaneI> toQueues = this.nextQueueToLinkCache.get(queue.getId()).get(toLinkId);
+		if(toQueues == null ) {
+			toQueues = nextQueueToLinkCache.values().iterator().next().values().iterator().next();
+		}
 		QLaneI retLane = toQueues.get(0);
 		if (toQueues.size() == 1) {
 			return retLane;

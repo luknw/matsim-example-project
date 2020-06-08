@@ -53,7 +53,7 @@ public class RunMatsimForKrakow {
         controler = new Controler(scenario);
 
         attachSignals();
-//        attachMetrics();
+        attachMetrics();
 
         controler.run();
     }
