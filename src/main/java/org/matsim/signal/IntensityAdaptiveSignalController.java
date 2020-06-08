@@ -64,7 +64,7 @@ public class IntensityAdaptiveSignalController extends AbstractSignalController 
             SignalPlanData current = signalPlanData.get(planQueue.getLast().getId());
             updatePlan(current, planQueue.size()-1, signalGroupToIntensityOnLinks);
             SignalPlanData next = signalPlanData.get(planQueue.getFirst().getId());
-            //updatePlan(next, 0, signalGroupToIntensityOnLinks); //TODO uncomment!
+            updatePlan(next, 0, signalGroupToIntensityOnLinks);
         } /* else do nothing */
 
     }

@@ -11,16 +11,16 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.contrib.signals.SignalSystemsConfigGroup;
+import org.matsim.contrib.signals.controller.fixedTime.DefaultPlanbasedSignalSystemController;
 import org.matsim.contrib.signals.controller.laemmerFix.LaemmerSignalController;
 import org.matsim.contrib.signals.data.SignalsData;
 import org.matsim.contrib.signals.data.SignalsScenarioWriter;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalControlData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalGroupsData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalSystemControllerData;
+import org.matsim.contrib.signals.data.signalgroups.v20.*;
 import org.matsim.contrib.signals.data.signalsystems.v20.SignalSystemData;
 import org.matsim.contrib.signals.data.signalsystems.v20.SignalSystemsData;
 import org.matsim.contrib.signals.model.Signal;
+import org.matsim.contrib.signals.model.SignalGroup;
+import org.matsim.contrib.signals.model.SignalPlan;
 import org.matsim.contrib.signals.model.SignalSystem;
 import org.matsim.contrib.signals.utils.SignalUtils;
 import org.matsim.core.config.ConfigUtils;
@@ -32,6 +32,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.signal.IntensityAdaptiveSignalController;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -65,11 +66,77 @@ public class CreateKrakowSignals {
 
             SignalUtils.createAndAddSignalGroups4Signals(groups, sysData);
 
-            SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
-            control.addSignalSystemControllerData(controller);
-
-            controller.setControllerIdentifier(LaemmerSignalController.IDENTIFIER);
+            /* choose signal system controller */
+            // addPlanbasedSignalSystemController(control, sysData, groups, 55);
+            addAdaptiveSignalSystemController(control, sysData, groups, 25);
+            // addLaemmerSignalController(control, sysData);
         });
+    }
+
+    private static void addLaemmerSignalController(SignalControlData control, SignalSystemData sysData) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(LaemmerSignalController.IDENTIFIER);
+    }
+
+    private static void addPlanbasedSignalSystemController(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, int greenLength) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(DefaultPlanbasedSignalSystemController.IDENTIFIER);
+
+        SignalPlanData plan = control.getFactory().createSignalPlanData(Id.create(0, SignalPlan.class));
+        controller.addSignalPlanData(plan);
+        /* since there is a single plan for each group startTime and endTime are set to 0.0 */
+        plan.setStartTime(0.0);
+        plan.setEndTime(0.0);
+        plan.setOffset(0);
+
+        int cycleTime = createSignalGroupsSettings(control, sysData, groups, plan, greenLength);
+        plan.setCycleTime(cycleTime);
+    }
+
+    /**
+     * Creates a plan for each group in the system
+     *
+     * @return cycle time
+     */
+    private static int createSignalGroupsSettings(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, SignalPlanData plan, int greenLength) {
+        int startTime = 0;
+        /* Currently, it is sufficient to iterate over sys's signals since each signal has separate group with the same id
+         *  Once we have smart groups current sysData's groups should be used instead
+         * */
+        for(SignalData signalData: sysData.getSignalData().values()) {
+            Id<SignalGroup> signalGroupId = groups.getSignalGroupDataBySystemId(sysData.getId()).get(signalData.getId()).getId();
+            SignalGroupSettingsData settings = control.getFactory().createSignalGroupSettingsData(signalGroupId);
+            settings.setOnset(startTime);
+            settings.setDropping(startTime + greenLength);
+            plan.addSignalGroupSettings(settings);
+            startTime += greenLength + 5;
+        }
+        return startTime;
+    }
+
+    private static void addAdaptiveSignalSystemController(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, int greenLength) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(IntensityAdaptiveSignalController.IDENTIFIER);
+
+        /* add separate plan for every 5 cycles interval */
+        int cyclesPerPlan = 5;
+        int planStartTime = 0;
+        while(planStartTime < 24*3600){
+            SignalPlanData plan = control.getFactory().createSignalPlanData(Id.create(planStartTime, SignalPlan.class));
+            // add the plan to the system control
+            controller.addSignalPlanData(plan);
+
+            plan.setStartTime((double) planStartTime);
+            plan.setOffset(0);
+
+            int cycleTime = createSignalGroupsSettings(control, sysData, groups, plan, greenLength);
+            plan.setCycleTime(cycleTime);
+            plan.setEndTime((double) planStartTime + cyclesPerPlan * cycleTime);
+            planStartTime += plan.getEndTime();
+        }
     }
 
     public static void main(String[] args) throws IOException, OsmInputException {
