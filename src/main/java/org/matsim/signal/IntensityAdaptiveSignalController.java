@@ -16,88 +16,84 @@ import org.matsim.contrib.signals.data.signalgroups.v20.SignalGroupSettingsData;
 import org.matsim.contrib.signals.data.signalgroups.v20.SignalPlanData;
 import org.matsim.contrib.signals.data.signalgroups.v20.SignalSystemControllerData;
 import org.matsim.contrib.signals.model.*;
-import org.matsim.core.controler.ControlerListenerManager;
-import org.matsim.intensity.DelayMonitor;
 import org.matsim.intensity.IntensityMonitor;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * Based on SimpleResponsiveSignal from org.matsim.codeexamples.simpleResponsiveSignalEngine.
- * Assumes that every junction has 24h / ADAPTATION_INTERVAL plans for every ADAPTATION_INTERVAL so it can analyze traffic and adapt discretely
- * upcoming plans
- * //TODO change DelayMonitor or use DensityMonitor instead - could be even better?
+ * Assumes that every junction has 24h / interval plans for every interval, so it can analyze traffic and adapt discretely
+ * plans.
  */
-public class DelayAdaptiveSignalController extends AbstractSignalController {
+public class IntensityAdaptiveSignalController extends AbstractSignalController {
 
-    private static final Logger LOG = Logger.getLogger(DelayAdaptiveSignalController.class);
-    public static final String IDENTIFIER = "DelayAdaptiveSignalControl";
+    private static final Logger LOG = Logger.getLogger(IntensityAdaptiveSignalController.class);
+    public static final String IDENTIFIER = "IntensityAdaptiveSignalControl";
 
-    public static final int ADAPTATION_INTERVAL = 10 * 60; /* adapt plans every ADAPTATION_INTERVAL */
-    private static final int MAX_SHIFT = 15;
+    private int interval; /* adapt plans every interval = 5 * cycle */
 
-    private final IntensityMonitor delayMonitor;
+    private final IntensityMonitor intensityMonitor;
     private final Scenario scenario;
-    private int lastUpdateMarker; /* calculated as time of the last plan update divided by ADAPTATION_INTERVAL (floor) */
+    private int lastUpdateMarker; /* calculated as time of the last plan update divided by an interval (floor) */
 
     private SignalController planBasedSignalController;
     private LinkedList<SignalPlan> planQueue; /* planBasedSignalController's planQueue */
 
-    private DelayAdaptiveSignalController(Scenario scenario, IntensityMonitor delayMonitor, SignalController planBasedSignalController) {
+    private IntensityAdaptiveSignalController(Scenario scenario, IntensityMonitor intensityMonitor, SignalController planBasedSignalController) {
         super();
         this.scenario = scenario;
-        this.delayMonitor = delayMonitor;
+        this.intensityMonitor = intensityMonitor;
         this.planBasedSignalController = planBasedSignalController;
         this.lastUpdateMarker = 0;
     }
 
     /**
-     * updates current and next plan according to the delays on links if necessary
+     * updates current and next plan according to the intensity on links if necessary
      */
     private void updateSignalsIfNecessary(double updateTime) {
 
-        Map<SignalGroup, Double> signalGroupToDelayOnLinks = getSignalGroupToDelayOnLinks(updateTime);
+        Map<Id<SignalGroup>, Double> signalGroupToIntensityOnLinks = getSignalGroupToIntensityOnLinks(updateTime);
 
-        if (delaysExist(signalGroupToDelayOnLinks)) { /* improve plans only if delays exist */
+        if (trafficTooIntense(signalGroupToIntensityOnLinks)) { /* improve plans only if traffic too intense on any link */
             Map<Id<SignalPlan>, SignalPlanData> signalPlanData = getSignalPlanData();
             SignalPlanData current = signalPlanData.get(planQueue.getLast().getId());
-            updatePlan(current, planQueue.size()-1, signalGroupToDelayOnLinks);
+            updatePlan(current, planQueue.size()-1, signalGroupToIntensityOnLinks);
             SignalPlanData next = signalPlanData.get(planQueue.getFirst().getId());
-            updatePlan(next, 0, signalGroupToDelayOnLinks);
-        } else {
-            /* do nothing */
-            LOG.info("Signal control unchanged.");
-        }
+            //updatePlan(next, 0, signalGroupToIntensityOnLinks); //TODO uncomment!
+        } /* else do nothing */
+
     }
 
-    private boolean delaysExist(Map<SignalGroup, Double> signalGroupToDelayOnLinks){
-        return signalGroupToDelayOnLinks.values().stream().anyMatch(delay -> delay > 0.0);
+    private boolean trafficTooIntense(Map<Id<SignalGroup>, Double> signalGroupToIntensityOnLinks){
+        return signalGroupToIntensityOnLinks.values().stream().anyMatch(intensity -> intensity > intensityMonitor.getIntensityThreshold());
     }
 
     /**
-     * updates plan according to the delays on links
+     * updates plan according to the intensity on links
      */
-    private void updatePlan(SignalPlanData planData, int indexInTheQueue, Map<SignalGroup, Double> signalGroupToDelayOnLinks) {
+    private void updatePlan(SignalPlanData planData, int indexInTheQueue, Map<Id<SignalGroup>, Double> signalGroupToIntensityOnLinks) {
         SortedMap<Id<SignalGroup>, SignalGroupSettingsData> signalGroupSettings = planData.getSignalGroupSettingsDataByGroupId();
-        double avgDelay = signalGroupToDelayOnLinks.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-        double maxDelay = signalGroupToDelayOnLinks.values().stream().mapToDouble(Double::doubleValue).max().orElse(1.0);
-        if(maxDelay == avgDelay) {
-            return; /* nothing we can do */
-        }
-        signalGroupSettings.forEach((id, settingsData) -> {
-            double greenTimeShiftFactor  = (signalGroupToDelayOnLinks.get(id) - avgDelay)/(maxDelay- avgDelay);
-            int greenTimeShift = (int) Math.round(greenTimeShiftFactor * MAX_SHIFT);
-            settingsData.setDropping(settingsData.getDropping() + greenTimeShift);
-            settingsData.setOnset(settingsData.getDropping() - greenTimeShift);
-            LOG.info(id+": onset " + settingsData.getOnset() + ", dropping " + settingsData.getDropping());
-        });
 
-        //TODO adjust cycle time
+        double median = getMedian(signalGroupToIntensityOnLinks.values());
+        int startTime = 0;
+        for( Map.Entry<Id<SignalGroup>, SignalGroupSettingsData> entry  : signalGroupSettings.entrySet()) { //TODO most likely should be sorted
+            SignalGroupSettingsData settingsData = entry.getValue();
+            int greenDuration = settingsData.getDropping() - settingsData.getOnset();
+            double linkIntensity = signalGroupToIntensityOnLinks.get(entry.getKey());
+            int durationChange = Double.compare(linkIntensity, median) * 5;
+            greenDuration = (greenDuration + durationChange) >= 5 ? (greenDuration + durationChange) : greenDuration;
+
+            settingsData.setOnset(startTime);
+            settingsData.setDropping(startTime + greenDuration);
+            startTime += greenDuration + 5;
+            LOG.warn(entry.getKey()+": onset " + settingsData.getOnset() + ", dropping " + settingsData.getDropping());
+        }
+        planData.setCycleTime(startTime);
 
         /* the new plan needs to be added to the signal control since it was made persistent over the iterations
         * and is not built newly each iteration from the data. theresa, jan'20 */
@@ -106,17 +102,17 @@ public class DelayAdaptiveSignalController extends AbstractSignalController {
         addPlan(signalPlan);
     }
 
-    private Map<SignalGroup, Double> getSignalGroupToDelayOnLinks(double updateTime) {
+    private Map<Id<SignalGroup>, Double> getSignalGroupToIntensityOnLinks(double updateTime) {
         return system.getSignalGroups().values().stream()
-                .collect(Collectors.toMap(Function.identity(),
+                .collect(Collectors.toMap(SignalGroup::getId,
                         signalGroup -> signalGroup.getSignals().values().stream()
-                                .map(signal -> getDelayOnSignalsLink(signal, updateTime))
+                                .map(signal -> getIntensityOnSignalsLink(signal, updateTime))
                                 .mapToDouble(Double::doubleValue).sum()));
     }
 
-    private double getDelayOnSignalsLink(Signal signal, double updateTime) {
+    private double getIntensityOnSignalsLink(Signal signal, double updateTime) {
         Link link = scenario.getNetwork().getLinks().get(signal.getLinkId());
-        return delayMonitor.getAverageIntensityForLinkInInterval(link, updateTime - ADAPTATION_INTERVAL, updateTime);
+        return intensityMonitor.getAverageIntensityForLinkInInterval(link.getId(), updateTime - interval, updateTime);
     }
 
     private Map<Id<SignalPlan>, SignalPlanData> getSignalPlanData() {
@@ -124,6 +120,22 @@ public class DelayAdaptiveSignalController extends AbstractSignalController {
         SignalControlData signalControl = signalsData.getSignalControlData();
         SignalSystemControllerData signalControlSystem = signalControl.getSignalSystemControllerDataBySystemId().get(system.getId());
         return signalControlSystem.getSignalPlanData();
+    }
+
+    private double getMedian(Collection<Double> doubles) {
+        int size = doubles.size();
+
+        return size%2 == 0 ?
+                doubles.stream().sorted()
+                        .skip(size/2-1)
+                        .limit(2)
+                        .mapToDouble(Double::doubleValue)
+                        .average()
+                        .orElse(0.0) :
+                doubles.stream().sorted()
+                        .skip(size/2)
+                        .findFirst()
+                        .orElse(0.0);
     }
 
     @Override
@@ -134,13 +146,14 @@ public class DelayAdaptiveSignalController extends AbstractSignalController {
 
     @Override
     public void addPlan(SignalPlan plan) {
+        interval = plan.getCycleTime() * 10;
         super.addPlan(plan);
         planBasedSignalController.addPlan(plan);
     }
 
     @Override
     public void updateState(double timeSeconds) {
-        /* adapt plans every ADAPTATION_INTERVAL seconds */
+        /* adapt plans every interval seconds */
         if (planShouldBeAdapted(timeSeconds)) {
             lastUpdateMarker++;
             updateSignalsIfNecessary(timeSeconds);
@@ -149,7 +162,7 @@ public class DelayAdaptiveSignalController extends AbstractSignalController {
     }
 
     private boolean planShouldBeAdapted(double timeSeconds) {
-        return Math.floor(timeSeconds / ADAPTATION_INTERVAL) > lastUpdateMarker;
+        return Math.floor(timeSeconds / interval) > lastUpdateMarker;
     }
 
     @Override
@@ -157,29 +170,28 @@ public class DelayAdaptiveSignalController extends AbstractSignalController {
         planBasedSignalController.simulationInitialized(simStartTimeSeconds);
         /* very ugly and hacky but an alternative is to copy the sourcecode of DefaultPlanbasedSignalSystemController  */
         try {
-            Field planQueueField = null;
+            Field planQueueField;
             planQueueField = DefaultPlanbasedSignalSystemController.class.getDeclaredField("planQueue");
             planQueueField.setAccessible(true);
-            LinkedList<SignalPlan> planQueue = (LinkedList<SignalPlan>) planQueueField.get(planBasedSignalController);
+            planQueue = (LinkedList<SignalPlan>) planQueueField.get(planBasedSignalController);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
 
     }
 
-    public final static class DelayAdaptiveSignalControllerFactory implements SignalControllerFactory {
+    public final static class AdaptiveSignalControllerFactory implements SignalControllerFactory {
 
-        @Inject
-        ControlerListenerManager manager;
         @Inject
         Scenario scenario;
         @Inject
-        IntensityMonitor delayMonitor;
+        IntensityMonitor intensityMonitor;
 
         @Override
         public SignalController createSignalSystemController(SignalSystem signalSystem) {
+
             SignalController planBasedSignalController = new FixedTimeFactory().createSignalSystemController(signalSystem);
-            SignalController controller = new DelayAdaptiveSignalController(scenario, delayMonitor, planBasedSignalController);
+            SignalController controller = new IntensityAdaptiveSignalController(scenario, intensityMonitor, planBasedSignalController);
             controller.setSignalSystem(signalSystem);
             return controller;
         }

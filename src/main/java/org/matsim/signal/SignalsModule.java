@@ -1,4 +1,19 @@
 package org.matsim.signal;
 
-public class SignalsModule {
+
+import com.google.inject.Singleton;
+import org.matsim.core.controler.AbstractModule;
+import org.matsim.intensity.DelayMonitor;
+import org.matsim.intensity.DensityMonitor;
+import org.matsim.intensity.IntensityMonitor;
+
+/**
+ * Define here which IntensityMonitor should be used in IntensityAdaptiveSignalController
+ */
+public class SignalsModule extends AbstractModule {
+
+    @Override
+    public void install() {
+        bind(IntensityMonitor.class).to(DensityMonitor.class).in(Singleton.class);
+    }
 }
