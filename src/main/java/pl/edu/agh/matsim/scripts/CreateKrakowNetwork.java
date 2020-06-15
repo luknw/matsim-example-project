@@ -3,6 +3,7 @@ package pl.edu.agh.matsim.scripts;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.NetworkWriter;
+import org.matsim.contrib.signals.controller.fixedTime.DefaultPlanbasedSignalSystemController;
 import org.matsim.contrib.signals.controller.laemmerFix.LaemmerSignalController;
 import org.matsim.contrib.signals.data.SignalsData;
 import org.matsim.contrib.signals.data.SignalsScenarioWriter;
@@ -12,6 +13,7 @@ import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 import org.matsim.lanes.Lanes;
 import org.matsim.lanes.LanesWriter;
 import pl.edu.agh.matsim.networkReader.OsmSignalsReader;
+import pl.edu.agh.matsim.signal.IntensityAdaptiveSignalController;
 
 /**
  * krakow_roads.osm file obtained by downloading file from http://download.geofabrik.de/europe/poland/malopolskie.html
@@ -46,7 +48,8 @@ public class CreateKrakowNetwork {
         Lanes lanes = osmNetworkReader.getLanes();
         new LanesWriter(lanes).write("./scenarios/krakow/lanes.xml");
 
-        SignalsData signalsData = osmNetworkReader.getSignalsData(LaemmerSignalController.IDENTIFIER);
+        /* use controller of your choice */
+        SignalsData signalsData = osmNetworkReader.getSignalsData(DefaultPlanbasedSignalSystemController.IDENTIFIER);
 
         SignalsScenarioWriter signalsWriter = new SignalsScenarioWriter();
         signalsWriter.setSignalSystemsOutputFilename("./scenarios/krakow/signal_systems.xml");

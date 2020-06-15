@@ -1,5 +1,6 @@
 package pl.edu.agh.matsim.networkReader;
 
+import com.google.common.collect.ImmutableMap;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Identifiable;
@@ -7,15 +8,16 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.contrib.signals.SignalSystemsConfigGroup;
+import org.matsim.contrib.signals.controller.fixedTime.DefaultPlanbasedSignalSystemController;
+import org.matsim.contrib.signals.controller.laemmerFix.LaemmerSignalController;
 import org.matsim.contrib.signals.data.SignalsData;
 import org.matsim.contrib.signals.data.SignalsDataImpl;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalControlData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalGroupsData;
-import org.matsim.contrib.signals.data.signalgroups.v20.SignalSystemControllerData;
+import org.matsim.contrib.signals.data.signalgroups.v20.*;
 import org.matsim.contrib.signals.data.signalsystems.v20.SignalSystemData;
 import org.matsim.contrib.signals.data.signalsystems.v20.SignalSystemsData;
 import org.matsim.contrib.signals.model.Signal;
+import org.matsim.contrib.signals.model.SignalGroup;
+import org.matsim.contrib.signals.model.SignalPlan;
 import org.matsim.contrib.signals.model.SignalSystem;
 import org.matsim.contrib.signals.utils.SignalUtils;
 import org.matsim.core.network.NetworkUtils;
@@ -26,6 +28,7 @@ import org.matsim.lanes.Lanes;
 import org.matsim.lanes.LanesToLinkAssignment;
 import org.matsim.lanes.LanesUtils;
 import org.matsim.utils.objectattributes.attributable.Attributes;
+import pl.edu.agh.matsim.signal.IntensityAdaptiveSignalController;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -289,13 +292,81 @@ public class OsmSignalsReader extends SupersonicOsmNetworkReader {
 
             SignalUtils.createAndAddSignalGroups4Signals(groups, sysData);
 
-            SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
-            control.addSignalSystemControllerData(controller);
-
-            controller.setControllerIdentifier(signalControllerIdentifier);
+            Map<String, Runnable> identifierToController = ImmutableMap.of(
+                    LaemmerSignalController.IDENTIFIER, () -> addLaemmerSignalController(control, sysData),
+                    DefaultPlanbasedSignalSystemController.IDENTIFIER, () -> addPlanbasedSignalSystemController(control, sysData, groups, 25),
+                    IntensityAdaptiveSignalController.IDENTIFIER, () -> addAdaptiveSignalSystemController(control, sysData, groups, 25)
+            );
+            identifierToController.get(signalControllerIdentifier).run();
         });
 
         return signalsData;
+    }
+
+    private static void addLaemmerSignalController(SignalControlData control, SignalSystemData sysData) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(LaemmerSignalController.IDENTIFIER);
+    }
+
+    private static void addPlanbasedSignalSystemController(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, int greenLength) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(DefaultPlanbasedSignalSystemController.IDENTIFIER);
+
+        SignalPlanData plan = control.getFactory().createSignalPlanData(Id.create(0, SignalPlan.class));
+        controller.addSignalPlanData(plan);
+        /* since there is a single plan for each group startTime and endTime are set to 0.0 */
+        plan.setStartTime(0.0);
+        plan.setEndTime(24 * 3600.0);
+        plan.setOffset(0);
+
+        int cycleTime = createSignalGroupsSettings(control, sysData, groups, plan, greenLength);
+        plan.setCycleTime(cycleTime);
+    }
+
+    /**
+     * Creates a plan for each group in the system
+     *
+     * @return cycle time
+     */
+    private static int createSignalGroupsSettings(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, SignalPlanData plan, int greenLength) {
+        int startTime = 0;
+        /* Currently, it is sufficient to iterate over sys's signals since each signal has separate group with the same id
+         *  Once we have smart groups current sysData's groups should be used instead
+         * */
+        for (SignalData signalData : sysData.getSignalData().values()) {
+            Id<SignalGroup> signalGroupId = groups.getSignalGroupDataBySystemId(sysData.getId()).get(signalData.getId()).getId();
+            SignalGroupSettingsData settings = control.getFactory().createSignalGroupSettingsData(signalGroupId);
+            settings.setOnset(startTime);
+            settings.setDropping(startTime + greenLength);
+            plan.addSignalGroupSettings(settings);
+            startTime += greenLength + 5;
+        }
+        return startTime;
+    }
+
+    private static void addAdaptiveSignalSystemController(SignalControlData control, SignalSystemData sysData, SignalGroupsData groups, int greenLength) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(IntensityAdaptiveSignalController.IDENTIFIER);
+
+        /* add separate plan for every 5 cycles interval */
+        int cyclesPerPlan = 5;
+        int planStartTime = 0;
+        while (planStartTime < 24 * 3600) {
+            SignalPlanData plan = control.getFactory().createSignalPlanData(Id.create(planStartTime, SignalPlan.class));
+            // add the plan to the system control
+            controller.addSignalPlanData(plan);
+
+            plan.setStartTime((double) planStartTime);
+            plan.setOffset(0);
+
+            int cycleTime = createSignalGroupsSettings(control, sysData, groups, plan, greenLength);
+            plan.setCycleTime(cycleTime);
+            plan.setEndTime(Double.min((double) planStartTime + cyclesPerPlan * cycleTime, 24 * 3600.0));
+            planStartTime += plan.getEndTime();
+        }
     }
 
     //        Map<Cluster, Set<Node>> intersections = signalSystems.stream()

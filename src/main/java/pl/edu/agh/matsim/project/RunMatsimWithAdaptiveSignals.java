@@ -3,6 +3,7 @@ package pl.edu.agh.matsim.project;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.contrib.signals.SignalSystemsConfigGroup;
 import org.matsim.contrib.signals.builder.Signals;
+import org.matsim.contrib.signals.controller.fixedTime.DefaultPlanbasedSignalSystemController;
 import org.matsim.contrib.signals.controller.laemmerFix.LaemmerSignalController;
 import org.matsim.contrib.signals.data.SignalsData;
 import org.matsim.contrib.signals.data.SignalsDataLoader;
@@ -16,8 +17,7 @@ import pl.edu.agh.matsim.signal.SignalsModule;
 
 /**
  * Runs Krakow scenario with adaptive signals control.
- * Xml files needs to be generated with CreateKrakowSignals script calling addAdaptiveSignalSystemController
- * in populateSignalsData method. In the future CreateKrakowSignals should be abstract.
+ * Make sure to generate network with matching controller
  */
 public class RunMatsimWithAdaptiveSignals {
     private static final String path = "./scenarios/krakow/config.xml";
@@ -39,10 +39,10 @@ public class RunMatsimWithAdaptiveSignals {
             signalsConfigGroup.setSignalControlFile(controlPath);
             scenario.addScenarioElement(SignalsData.ELEMENT_NAME, new SignalsDataLoader(config).loadSignalsData());
             controler.addOverridingModule(new SignalsModule()); /* so we can inject our classes bound in */
-          //  new Signals.Configurator(controler)
-          //          .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
+           // new Signals.Configurator(controler)
+           //         .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
             new Signals.Configurator(controler)
-                    .addSignalControllerFactory(LaemmerSignalController.IDENTIFIER, LaemmerSignalController.LaemmerFactory.class);
+                    .addSignalControllerFactory(DefaultPlanbasedSignalSystemController.IDENTIFIER, DefaultPlanbasedSignalSystemController.FixedTimeFactory.class);
         }
     }
 

@@ -41,7 +41,7 @@ public class IntensityAdaptiveSignalController extends AbstractSignalController 
     private final Scenario scenario;
     private int lastUpdateMarker; /* calculated as time of the last plan update divided by an interval (floor) */
 
-    private SignalController planBasedSignalController;
+    private final SignalController planBasedSignalController;
     private LinkedList<SignalPlan> planQueue; /* planBasedSignalController's planQueue */
 
     private IntensityAdaptiveSignalController(Scenario scenario, IntensityMonitor intensityMonitor, SignalController planBasedSignalController) {
