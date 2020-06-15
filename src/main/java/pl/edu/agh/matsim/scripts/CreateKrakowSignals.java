@@ -72,6 +72,12 @@ public class CreateKrakowSignals {
         });
     }
 
+    private static void addLaemmerSignalController(SignalControlData control, SignalSystemData sysData) {
+        SignalSystemControllerData controller = control.getFactory().createSignalSystemControllerData(sysData.getId());
+        control.addSignalSystemControllerData(controller);
+        controller.setControllerIdentifier(LaemmerSignalController.IDENTIFIER);
+    }
+
     public static void main(String[] args) throws IOException, OsmInputException {
         List<Cluster> signalSystems = readSignalSystems();
 

@@ -68,8 +68,8 @@ public class CreateAdaptiveKrakowSignals {
 
             /* choose signal system controller */
             // addPlanbasedSignalSystemController(control, sysData, groups, 55);
-            addAdaptiveSignalSystemController(control, sysData, groups, 25);
-            // addLaemmerSignalController(control, sysData);
+            // addAdaptiveSignalSystemController(control, sysData, groups, 25);
+             addLaemmerSignalController(control, sysData);
         });
     }
 

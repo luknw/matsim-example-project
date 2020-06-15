@@ -3,6 +3,7 @@ package pl.edu.agh.matsim.project;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.contrib.signals.SignalSystemsConfigGroup;
 import org.matsim.contrib.signals.builder.Signals;
+import org.matsim.contrib.signals.controller.laemmerFix.LaemmerSignalController;
 import org.matsim.contrib.signals.data.SignalsData;
 import org.matsim.contrib.signals.data.SignalsDataLoader;
 import org.matsim.contrib.signals.data.SignalsScenarioWriter;
@@ -38,8 +39,10 @@ public class RunMatsimWithAdaptiveSignals {
             signalsConfigGroup.setSignalControlFile(controlPath);
             scenario.addScenarioElement(SignalsData.ELEMENT_NAME, new SignalsDataLoader(config).loadSignalsData());
             controler.addOverridingModule(new SignalsModule()); /* so we can inject our classes bound in */
+          //  new Signals.Configurator(controler)
+          //          .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
             new Signals.Configurator(controler)
-                    .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
+                    .addSignalControllerFactory(LaemmerSignalController.IDENTIFIER, LaemmerSignalController.LaemmerFactory.class);
         }
     }
 

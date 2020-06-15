@@ -3,8 +3,7 @@ package pl.edu.agh.matsim.signal;
 
 import com.google.inject.Singleton;
 import org.matsim.core.controler.AbstractModule;
-import org.matsim.intensity.DelayMonitor;
-import org.matsim.intensity.DensityMonitor;
+import pl.edu.agh.matsim.intensity.DensityMonitor;
 import pl.edu.agh.matsim.intensity.IntensityMonitor;
 
 /**
