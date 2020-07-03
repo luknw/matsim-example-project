@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class CreateKrakowPopulation {
 
-    private static final int populationSize = 500; /* visualisation in Vim (free license) is limited to 500 agents */
+    private static final int populationSize = 5000; /* visualisation in Vim (free license) is limited to 500 agents */
     private static final String homeSourceFilePath = "./scenarios/krakow/home.csv";
     private static final String workSourceFilePath = "./scenarios/krakow/office.csv";
     private static final String supermarketSourceFilePath = "./scenarios/krakow/supermarket.csv";

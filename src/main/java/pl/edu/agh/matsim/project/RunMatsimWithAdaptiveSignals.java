@@ -12,8 +12,12 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.scenario.ScenarioUtils;
+import pl.edu.agh.matsim.intensity.DensityMonitor;
+import pl.edu.agh.matsim.intensity.TrafficIntensityReporter;
 import pl.edu.agh.matsim.signal.IntensityAdaptiveSignalController;
 import pl.edu.agh.matsim.signal.SignalsModule;
+
+import javax.inject.Inject;
 
 /**
  * Runs Krakow scenario with adaptive signals control.
@@ -61,8 +65,8 @@ public class RunMatsimWithAdaptiveSignals {
         controler = new Controler(scenario);
 
         attachSignals();
-
+        controler.addControlerListener(new TrafficIntensityReporter(new DensityMonitor(scenario, controler.getEvents()), scenario.getNetwork()));
         controler.run();
-        saveSignalControls();
+        //saveSignalControls();
     }
 }
