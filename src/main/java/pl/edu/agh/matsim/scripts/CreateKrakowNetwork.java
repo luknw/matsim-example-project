@@ -49,7 +49,7 @@ public class CreateKrakowNetwork {
         new LanesWriter(lanes).write("./scenarios/krakow/lanes.xml");
 
         /* use controller of your choice */
-        SignalsData signalsData = osmNetworkReader.getSignalsData(DefaultPlanbasedSignalSystemController.IDENTIFIER);
+        SignalsData signalsData = osmNetworkReader.getSignalsData(IntensityAdaptiveSignalController.IDENTIFIER);
 
         SignalsScenarioWriter signalsWriter = new SignalsScenarioWriter();
         signalsWriter.setSignalSystemsOutputFilename("./scenarios/krakow/signal_systems.xml");

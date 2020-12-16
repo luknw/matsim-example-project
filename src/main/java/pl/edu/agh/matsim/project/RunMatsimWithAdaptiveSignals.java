@@ -46,7 +46,7 @@ public class RunMatsimWithAdaptiveSignals {
            // new Signals.Configurator(controler)
            //         .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
             new Signals.Configurator(controler)
-                    .addSignalControllerFactory(DefaultPlanbasedSignalSystemController.IDENTIFIER, DefaultPlanbasedSignalSystemController.FixedTimeFactory.class);
+                    .addSignalControllerFactory(IntensityAdaptiveSignalController.IDENTIFIER, IntensityAdaptiveSignalController.AdaptiveSignalControllerFactory.class);
         }
     }
 

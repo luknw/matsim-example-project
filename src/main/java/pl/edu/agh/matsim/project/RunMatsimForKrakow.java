@@ -11,10 +11,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.scenario.ScenarioUtils;
-import pl.edu.agh.matsim.intensity.DelayMonitor;
-import pl.edu.agh.matsim.intensity.DensityMonitor;
-import pl.edu.agh.matsim.intensity.TestTrafficIntensityReporter;
-import pl.edu.agh.matsim.intensity.VolumesMonitor;
+import pl.edu.agh.matsim.intensity.*;
 
 import java.util.Collection;
 
@@ -53,8 +50,10 @@ public class RunMatsimForKrakow {
         controler = new Controler(scenario);
 
         attachSignals();
-        //attachMetrics();
+//        attachMetrics();
 
+        controler.addControlerListener(new TrafficIntensityReporter(
+                new DensityMonitor(scenario, controler.getEvents()), scenario.getNetwork()));
         controler.run();
     }
 }
